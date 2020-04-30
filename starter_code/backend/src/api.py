@@ -20,10 +20,6 @@ CORS(app)
 
 ## ROUTES
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
-
 @app.route('/drinks')
 def get_drinks():
     drinks = Drink.query.all()
@@ -113,6 +109,6 @@ def notfound(error):
 def authentification_failed(AuthError):
     return jsonify({
                     "success": False,
-                    "error": AuthErorr.status_code,
+                    "error": AuthError.status_code,
                     "message": "authentification fails"
                     }), 401
