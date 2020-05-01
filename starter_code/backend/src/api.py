@@ -16,31 +16,31 @@ CORS(app)
 !! NOTE THIS WILL DROP ALL RECORDS AND START YOUR DB FROM SCRATCH
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
-#db_drop_and_create_all()
+# db_drop_and_create_all()
 
-## ROUTES
-
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
 
 @app.route('/drinks')
 def get_drinks():
     drinks = Drink.query.all()
+    if len(drinks) == 0:
+        abort(404)
     result = {
         'success': True,
         'drinks': list(map(lambda drink: drink.short(), drinks))
     }
     return jsonify(result)
 
+
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth('get:drinks-detail')
 def drinks_detail(payload):
     drinks = Drink.query.all()
+    if len(drinks) == 0:
+        abort(404)
     result = {
-    'success': True,
-    'drinks': list(map(lambda drink: drink.long(), drinks))
-    }
+            'success': True,
+            'drinks': list(map(lambda drink: drink.long(), drinks))
+            }
     return jsonify(result)
 
 
@@ -48,15 +48,18 @@ def drinks_detail(payload):
 @requires_auth('post:drinks')
 def create_drink(payload):
     body = request.get_json()
-    print (body)
-    title, recipe = body['title'] , str(body['recipe'])
-    recipe = recipe.replace("\'", "\"")
-    drink = Drink(title=title, recipe=str(recipe))
-    drink.insert()
-    return jsonify({
-        'success': True,
-        'drinks': drink.long()
-    })
+    try:
+        title, recipe = body['title'], str(body['recipe'])
+        recipe = recipe.replace("\'", "\"")
+        drink = Drink(title=title, recipe=str(recipe))
+        drink.insert()
+        return jsonify({
+            'success': True,
+            'drinks': drink.long()
+        })
+    except:
+        abort(422)
+
 
 @app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
@@ -66,7 +69,7 @@ def replace_drink(payload, id):
         abort(404)
     else:
         body = request.get_json()
-        title, recipe = body['title'] , str(body['recipe'])
+        title, recipe = body['title'], str(body['recipe'])
         recipe = recipe.replace("\'", "\"")
         drink.title = title
         drink.recipe = recipe
@@ -76,9 +79,10 @@ def replace_drink(payload, id):
         "drinks": drink.long()
     })
 
+
 @app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink_by_id(payload,id):
+def delete_drink_by_id(payload, id):
     drink = Drink.query.filter_by(id=id).first()
     if drink is None:
         abort(404)
@@ -89,7 +93,8 @@ def delete_drink_by_id(payload,id):
         "delete": id
     })
 
-## Error Handling
+# Error Handling
+
 
 @app.errorhandler(422)
 def unprocessable(error):
@@ -113,6 +118,6 @@ def notfound(error):
 def authentification_failed(AuthError):
     return jsonify({
                     "success": False,
-                    "error": AuthErorr.status_code,
+                    "error": AuthError.status_code,
                     "message": "authentification fails"
                     }), 401
